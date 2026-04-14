@@ -1,0 +1,88 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Cat & Dog Classifier</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px;
+           margin: 60px auto; text-align: center; background: #f0f4f8; }
+    h1   { color: #0F2D4A; }
+    .upload-box { border: 2px dashed #1976D2; border-radius: 12px;
+                  padding: 40px; background: white; cursor: pointer; }
+    #preview { max-width: 300px; border-radius: 8px; margin: 16px auto; display:none; }
+    button   { background: #1565C0; color: white; border: none;
+               padding: 14px 36px; border-radius: 8px; font-size: 16px;
+               cursor: pointer; margin-top: 16px; }
+    button:hover { background: #0D47A1; }
+    #result { margin-top: 28px; font-size: 28px; font-weight: bold; color: #1B5E20; }
+    #confidence { font-size: 16px; color: #555; }
+    #error { color: #B71C1C; margin-top: 16px; }
+    #spinner { display:none; margin-top:16px; color:#555; font-size:15px; }
+  </style>
+</head>
+<body>
+  <h1>🐱🐶 Cat & Dog Classifier</h1>
+  <p>Upload a photo to find out if it's a cat or a dog!</p>
+ 
+  <div class='upload-box' onclick='document.getElementById("fileInput").click()'>
+    <p>📁 Click here to choose an image</p>
+    <p style='font-size:13px;color:#888'>JPG, PNG, WEBP supported</p>
+    <input type='file' id='fileInput' accept='image/*' style='display:none'
+           onchange='previewImage(this)'>
+  </div>
+ 
+  <img id='preview' alt='Preview'>
+  <br>
+  <button onclick='classify()'>🔍 Classify Image</button>
+  <div id='spinner'>⏳ Analysing image, please wait…</div>
+  <div id='result'></div>
+  <div id='confidence'></div>
+  <div id='error'></div>
+ 
+  <script>
+    function previewImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.getElementById('preview');
+          img.src = e.target.result;
+          img.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+ 
+    async function classify() {
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files.length) {
+        document.getElementById('error').textContent = 'Please select an image first.';
+        return;
+      }
+      document.getElementById('error').textContent      = '';
+      document.getElementById('result').textContent     = '';
+      document.getElementById('confidence').textContent = '';
+      document.getElementById('spinner').style.display  = 'block';
+ 
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+ 
+      try {
+        const response = await fetch('/predict', { method: 'POST', body: formData });
+        const data     = await response.json();
+        document.getElementById('spinner').style.display = 'none';
+        if (data.error) {
+          document.getElementById('error').textContent = 'Error: ' + data.error;
+        } else {
+          document.getElementById('result').textContent     = data.prediction;
+          document.getElementById('confidence').textContent = 'Confidence: ' + data.confidence;
+        }
+      } catch (err) {
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('error').textContent = 'Network error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
