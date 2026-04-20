@@ -50,12 +50,15 @@ def predict():
         img_pil   = img_pil.resize((200, 200))
  
         # Convert to numpy array and add batch dimension
-        img_array = image.img_to_array(img_pil)        # shape: (200, 200, 3)
+        img_array = image.img_to_array(img_pil)
+        img_array =  img_array / 255.0       # shape: (200, 200, 3)
         img_array = np.expand_dims(img_array, axis=0)  # shape: (1, 200, 200, 3)
  
         # Run prediction
-        raw_output   = float(model.predict(img_array)[0][0])
- 
+        prediction = model.predict(img_array, verbose=0)
+        raw_output   = float(prediction[0][0])
+
+
         # Map to label and confidence
         if raw_output >= 0.5:
             label      = LABELS[1]
@@ -71,6 +74,7 @@ def predict():
         })
  
     except Exception as e:
+        print("ERROR:", e)
         return jsonify({'error': str(e)}), 500
  
 # ── 6. Entry Point ────────────────────────────────
